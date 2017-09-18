@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="http://unpkg.com/nek-ui/dist/css/nek-ui.default.min.css">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app"></div>
+<script id="appTpl" type="text/html">
+    <div>
+        <h1>{title}</h1>
+        <kl-tabs on-change={this.onSelect($event)}>
+            {#list tabState.source as tab}
+                <kl-tab title={tab.name} key={tab.key}></kl-tab>
+            {/list}
+        </kl-tabs>
+        <kl-select source={selectState.source} value={selectState.selected} />
+        <kl-table
+            columns={tableState.columns}
+            source={tableState.source}
+        />
+    </div> 
+</script>
+<script src="http://oc3wui92y.bkt.clouddn.com//temp/regular.min.js"></script>
+<script type="text/javascript" src="http:/unpkg.com/nek-ui/dist/js/nek-ui.min.js"></script>
+<script src="http://oc3wui92y.bkt.clouddn.com//temp/rWatch.js"></script>
+<script src="./index.js"></script>
+</body>
+</html>
