@@ -50,19 +50,18 @@ var App = Regular.extend({
     config: function(data){
         var self = this;
         var watcher = this.rwatch(this);
-        
-        watcher.watch(['tabState.selected'], 'selectState.source', function(sources, target){
-            var selectedKey = sources[0].value;
-            return config.selectSource[selectedKey];
-        });
 
-        watcher.watch(['tabState.selected'], 'selectState.selected', function(sources, target){
+        watcher.watch('tabState.selected', ['selectState.selected', 'selectState.source'], [function(source, target){
             return 1;
-        });
+        }, function(source, target){
+
+            var selectedKey = source;
+            return config.selectSource[selectedKey];
+        }]);
         
         watcher.watch(['tabState.selected', 'selectState.source'], 'tableState.columns', function(sources, target){
-            var mainSelected = sources[0].value,
-                selectSource = sources[1].value;
+            var mainSelected = sources[0],
+                selectSource = sources[1];
 
             return selectSource.map(function(item){
                 return {name: item.name+mainSelected, key: item.name}

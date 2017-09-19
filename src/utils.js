@@ -1,4 +1,6 @@
 var utils = {};
+var toString = Object.prototype.toString;
+
 
 utils.throttle = function(fn){
     var timer;
@@ -34,19 +36,24 @@ utils.resolvePath = function(path, context, type){
     return result;
 };
 
-utils.findInTree = function(tree, nodeName, result, findFirst){
+utils.findInTree = function(tree, nodeName, result){
     if(tree[nodeName]){
-        if(findFirst) return tree[nodeName];
-        result.push(tree[nodeName]);
+        return tree[nodeName];
     }
     for(var key in tree){
-        var has = utils.findInTree(tree[key], nodeName, result, findFirst)
+        var has = utils.findInTree(tree[key], nodeName, result)
         if(has){
-            if(findFirst) return has;
-            result.push(has);
+            return has;
         }
     }
-    return result;
+}
+
+utils.typeOf = function(item){
+    
+    if(typeof item !== 'object'){
+        return typeof item;
+    }
+    return toString.call(item).slice(8, -1);
 }
 
 module.exports = utils;
