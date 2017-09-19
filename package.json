@@ -1,5 +1,26 @@
 {
-  "devDependencies": {
-    "regularjs": "^0.6.0-beta.6"
-  }
+  "name": "rwatcher",
+  "version": "1.0.0",
+  "description": "wactch for regular",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jabbla/rwatch.git"
+  },
+  "keywords": [
+    "regular",
+    "javascript"
+  ],
+  "author": "zhuxiaoran",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jabbla/rwatch/issues"
+  },
+  "homepage": "https://github.com/jabbla/rwatch#readme"
 }
