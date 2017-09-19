@@ -26,7 +26,6 @@ var App = Regular.extend({
     config: function(){
         var watcher = this.rwatch(this);
         watcher.watch(..);
-        });
     }
 });
 ```
