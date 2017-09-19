@@ -72,7 +72,7 @@
     rWatch.prototype.addWatcher = function(targetAttr, attrs, index, rule){
         var context = this.context;
         var source = attrs[index];
-        console.log(index);
+
         context.$watch(source.name, throttle(function(newValue){
             source.value = newValue;  
 
@@ -112,15 +112,16 @@
             });
         });
 
-        this.attrsFilter(attrs).forEach(function(item) {
-            self.addWatcher(targetAttr, attrs, item.index, rule);
-        });
+        setTimeout(function(){
+            self.attrsFilter(attrs).forEach(function(item) {
+                self.addWatcher(targetAttr, attrs, item.index, rule);
+            });
+        }, 0);
     };
 
     rWatch.prototype.buildDep = function(source, target){
         var depTree = this.depTree;
 
-        /**构建依赖树 */
         var nodes = findInTree(depTree, source, []);
 
         nodes.forEach(function(node){
@@ -164,6 +165,6 @@
 
     };
 
+    window.rwatch = maping;
 
-    window.rWatch = maping;
 })();
