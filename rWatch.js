@@ -19,21 +19,16 @@
         return result;
     };
     
-    var addWatcher = function(context, targetAttr, attrs, index, rule){
-        var source = attrs[index];
-        context.$watch(source.name, throttle(function(newValue){
-            if(rule.run) return;
+    var execSingle = function(context, targetAttr, rule){
+        var resolveResult = resolvePath(targetAttr, context.data, 'set');
+        context.$update(targetAttr, rule.call(context, attrs, resolveResult.value[resolveResult.name]));
+    };
 
-            source.value = newValue;  
-            var resolveResult = resolvePath(targetAttr, context.data, 'set');
-            context.$update(targetAttr, rule.call(context, attrs, resolveResult.value[resolveResult.name]));
-
-            rule.run = true;
-            setTimeout(function(){
-                rule.run = false;
-            }, 0);
-
-        }));
+    var bunchExec = function(context, targets){
+        for(var attr in targets){
+            var rule = targets[attr];
+            execSingle(context, attr, rule);
+        }
     };
     
     var throttle = function(fn){
@@ -50,23 +45,125 @@
         }
     };
 
+
     var maping = function(context){
-        return function(sourceAttrs, targetAttr, rule){
-            if(!sourceAttrs.length) return;
-
-            var attrs = sourceAttrs.map(function(item){
-                return {
-                    name: item,
-                    value: resolvePath(item, context.data)
-                };
-            });
-
-            attrs.forEach(function(item, index) {
-                addWatcher(context, targetAttr, attrs, index, rule);
-            });
-            
-        };
+        return new rWatch(context);
     };
+
+    function rWatch(context){
+        this.context = context;
+        this.depTree = {};
+    }
+
+    function findInTree(tree, nodeName, result, findFirst){
+        if(tree[nodeName]){
+            if(findFirst) return tree[nodeName];
+            result.push(tree[nodeName]);
+        }
+        for(var key in tree){
+            var has = findInTree(tree[key], nodeName, result, findFirst)
+            if(has){
+                if(findFirst) return has;
+                result.push(has);
+            }
+        }
+        return result;
+    }
+    rWatch.prototype.addWatcher = function(targetAttr, attrs, index, rule){
+        var context = this.context;
+        var source = attrs[index];
+        console.log(index);
+        context.$watch(source.name, throttle(function(newValue){
+            source.value = newValue;  
+
+            var resolveResult = resolvePath(targetAttr, context.data, 'set');
+            context.$update(targetAttr, rule.call(context, attrs, resolveResult.value[resolveResult.name]));
+
+        }));
+    };
+
+    rWatch.prototype.addPrimitiveWatcher = function(name, obj){
+        var context = this.context;
+
+        context.$watch(name, function(newValue){
+            obj.value = newValue;
+        });
+    };
+
+    rWatch.prototype.watch = function(sourceAttrs, targetAttr, rule){
+        if(!sourceAttrs.length) return;
+
+        var context = this.context,
+            self = this;
+
+        var attrs = sourceAttrs.map(function(item){
+            self.buildDep(item, targetAttr);
+
+            var value = resolvePath(item, context.data),
+                result = {};
+
+            if(typeof value !== 'object'){
+                self.addPrimitiveWatcher(item, result);
+            }
+
+            return Object.assign(result, {
+                name: item,
+                value: value
+            });
+        });
+
+        this.attrsFilter(attrs).forEach(function(item) {
+            self.addWatcher(targetAttr, attrs, item.index, rule);
+        });
+    };
+
+    rWatch.prototype.buildDep = function(source, target){
+        var depTree = this.depTree;
+
+        /**构建依赖树 */
+        var nodes = findInTree(depTree, source, []);
+
+        nodes.forEach(function(node){
+            node[target] = {};
+        });
+
+        if(!nodes.length){
+            depTree[source] = {};
+            depTree[source][target] = {};
+        }
+    };
+
+    rWatch.prototype.attrsFilter = function(attrs){
+        var depTree = this.depTree,
+            exclude = {};
+
+        for(var j=attrs.length-1;j>=0;j--){
+            var parentAttr = attrs[j].name;
+            for(var i=j-1;i>=0;i--){
+                var childAttr = attrs[i].name;
+                
+                var parentTree = findInTree(depTree, parentAttr, null, true);
+                var has = findInTree(parentTree, childAttr, null, true);
+
+                if(has){
+                    exclude[parentAttr] = true;
+                }else{
+                    parentTree = findInTree(depTree, childAttr, null, true);
+                    has = findInTree(parentTree, parentAttr, null, true);
+                    if(has){
+                        exclude[childAttr] = true;
+                    }
+                }
+            }
+        }
+
+        return attrs.filter(function(item, index){
+            item.index = index;
+            return !exclude[item.name];
+        });
+
+    };
+
 
     window.rWatch = maping;
 })();
