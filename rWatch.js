@@ -22,9 +22,17 @@
     var addWatcher = function(context, targetAttr, attrs, index, rule){
         var source = attrs[index];
         context.$watch(source.name, throttle(function(newValue){
+            if(rule.run) return;
+
             source.value = newValue;  
             var resolveResult = resolvePath(targetAttr, context.data, 'set');
             context.$update(targetAttr, rule.call(context, attrs, resolveResult.value[resolveResult.name]));
+
+            rule.run = true;
+            setTimeout(function(){
+                rule.run = false;
+            }, 0);
+
         }));
     };
     
