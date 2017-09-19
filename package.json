@@ -22,5 +22,7 @@
   "bugs": {
     "url": "https://github.com/jabbla/rwatch/issues"
   },
-  "homepage": "https://github.com/jabbla/rwatch#readme"
+  "homepage": "https://github.com/jabbla/rwatch#readme",
+  "dependencies": {},
+  "devDependencies": {}
 }
