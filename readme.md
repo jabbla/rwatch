@@ -1,5 +1,10 @@
 # rwatcher
 
+[![npm version](https://badge.fury.io/js/rwatcher.svg)](https://badge.fury.io/js/rwatcher)
+
+[![NPM](https://nodei.co/npm/rwatcher.png)](https://nodei.co/npm/rwatcher/)
+
+
 ## 快速上手
 ```bash
 npm install rwatcher --save
