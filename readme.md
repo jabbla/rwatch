@@ -4,6 +4,7 @@
 
 [![NPM](https://nodei.co/npm/rwatcher.png)](https://nodei.co/npm/rwatcher/)
 
+[codePen例子][1]
 
 ## 快速上手
 ```bash
@@ -88,7 +89,4 @@ watcher.watch(['select.current', 'select1.current'], 'selectSate', function(sour
 ```
 
 
-
-
-
-
+  [1]: https://codepen.io/jabbla/pen/rGeodQ
