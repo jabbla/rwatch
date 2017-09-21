@@ -69,7 +69,6 @@ rWatch.prototype.singleToMulti = function(source, targets, rules){
         self = this;
 
     targets.forEach(function(item){
-        debugger;
         self.buildDep(source, item);
     });
     
