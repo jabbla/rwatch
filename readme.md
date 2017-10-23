@@ -56,6 +56,27 @@ var App = Reguar.extend({
     }
 });
 ```
+#### 同步映射
+> 同步映射函数的最终返回值将作为目标属性的最终值
+
+```js
+watcher.watch('source', 'target', function(){
+    return 1; //1 将作为target属性的最终值
+})
+```
+
+#### 异步映射
+> 异步映射函数将取callback的实参作为目标属性的最终值
+
+```js
+watcher.asyncWatch('source', 'target', function(source, target, callback){
+    setTimeout(function(){
+        callback(1);    //1 将作为target属性的最终值
+    }, 1000);
+});
+```
+
+下面的例子同样适用于``asyncWatch``方法
 
 #### 一对一映射
 > ``watch(sourceAttr, targetAttr, rule)``
