@@ -1,5 +1,4 @@
 var utils = require('./utils.js');
-var resolvePath = utils.resolvePath;
 var findInTree = utils.findInTree;
 var throttle = utils.throttle;
 var Typeof = utils.typeOf;
@@ -10,37 +9,52 @@ function rWatch(context){
     this.depTree = {};
 }
 
-rWatch.prototype.judgeMapType = function(source, target, rule){
+rWatch.prototype.judgeMapType = function(source, target, rule, async){
     if(source instanceof Array && rule instanceof Function){
         /**多对一映射 */
-        this.multiToSingle(source, target, rule);
+        this.multiToSingle(source, target, rule, async);
     }else if(target instanceof Array && rule instanceof Array){
         /**一对多 */
-        this.singleToMulti(source, target, rule);
+        this.singleToMulti(source, target, rule, async);
     }else if(typeof source === 'string' && typeof target === 'string'){
         /**一对一 */
-        this.singleToSingle(source, target, rule);
+        this.singleToSingle(source, target, rule, async);
     }
 };
 
-rWatch.prototype.singleToSingle = function(source, target, rule){
+rWatch.prototype.wrapAsync = function(arg1, target, targetValue, context, rule){
+
+    var callback = function(result){
+        context.$update(target, result)
+    };
+    
+    rule.call(context, arg1, targetValue, callback);
+};
+
+rWatch.prototype.singleToSingle = function(source, target, rule, async){
     var context = this.context,
         self = this;
     
     context.$watch(source, function(newValue){
-        context.$update(target, rule.call(context, newValue, resolvePath(target, context.data)));
+        
+        var targetValue = context.$get(target);
+        if(async){
+            self.wrapAsync(newValue, target, targetValue, context, rule);
+        }else{
+            context.$update(target, rule.call(context, newValue, targetValue));
+        }
     });
 
 };
 
-rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule){
+rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async){
     var context = this.context,
         self = this;
 
     var attrs = sourceAttrs.map(function(item){
         self.buildDep(item, targetAttr);
 
-        var value = resolvePath(item, context.data),
+        var value = context.$get(item),
             result = {};
 
         if(typeof value !== 'object'){
@@ -57,14 +71,22 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule){
         self.attrsFilter(attrs).forEach(function(item) {
             var source = attrs[item.index];
             context.$watch(source.name, throttle(function(newValue){
-                source.value = newValue;  
-                context.$update(targetAttr, rule.call(context, attrs.map(function(item){return item.value}), resolvePath(targetAttr, context.data)));
+                source.value = newValue;
+
+                var sources = attrs.map(function(item){return item.value});
+                var targetValue = context.$get(targetAttr);
+
+                if(async){
+                    self.wrapAsync(sources, target, targetValue, context, rule);
+                }else{
+                    context.$update(targetAttr, rule.call(context, sources, targetValue));
+                }
             }));
         });
     }, 0);
 };
 
-rWatch.prototype.singleToMulti = function(source, targets, rules){
+rWatch.prototype.singleToMulti = function(source, targets, rules, async){
     var context = this.context,
         self = this;
 
@@ -74,7 +96,12 @@ rWatch.prototype.singleToMulti = function(source, targets, rules){
     
     context.$watch(source, throttle(function(newValue){
         targets.forEach(function(item, index){
-            context.$update(item, rules[index].call(context, newValue, resolvePath(item, context.data)));
+            var targetValue = context.$get(item);
+            if(async){
+                self.wrapAsync(newValue, item, targetValue, context, rules[index]);
+            }else{
+                context.$update(item, rules[index].call(context, newValue, targetValue));
+            }
         });
     }));
 };
@@ -91,6 +118,11 @@ rWatch.prototype.watch = function(sourceAttrs, targetAttr, rule){
     if(!sourceAttrs.length) return;
 
     this.judgeMapType(sourceAttrs, targetAttr, rule);
+};
+
+rWatch.prototype.asyncWatch = function(sourceAttrs, targetAttr, rule){
+    if(!sourceAttrs.length) return;
+    this.judgeMapType(sourceAttrs, targetAttr, rule, true);
 };
 
 rWatch.prototype.buildDep = function(source, target){

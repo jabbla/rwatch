@@ -54,15 +54,23 @@ var App = Regular.extend({
         watcher.watch('tabState.selected', ['selectState.selected', 'selectState.source'], [function(source, target){
             return 1;
         }, function(source, target){
-
+            console.log(target);
             var selectedKey = source;
             return config.selectSource[selectedKey];
         }]);
+
+        watcher.asyncWatch('tabState.selected', 'title', function(source, target, callback){
+            console.log(target);
+            setTimeout(function(){
+                callback('异步更新title1');
+            }, 5000);
+        });
         
         watcher.watch(['tabState.selected', 'selectState.source'], 'tableState.columns', function(sources, target){
             var mainSelected = sources[0],
                 selectSource = sources[1];
-
+            
+            console.log(target);
             return selectSource.map(function(item){
                 return {name: item.name+mainSelected, key: item.name}
             });
@@ -70,7 +78,6 @@ var App = Regular.extend({
     },
     onSelect: function(e){
         var data = this.data;
-
         data.tabState.selected = e.key;
     }
 });
