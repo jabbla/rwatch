@@ -2,6 +2,7 @@ var utils = require('./utils.js');
 var findInTree = utils.findInTree;
 var throttle = utils.throttle;
 var Typeof = utils.typeOf;
+var thenable = require('./thenable.js');
 
 
 function rWatch(context){
@@ -9,16 +10,16 @@ function rWatch(context){
     this.depTree = {};
 }
 
-rWatch.prototype.judgeMapType = function(source, target, rule, async){
+rWatch.prototype.judgeMapType = function(source, target, rule, async, Thenable){
     if(source instanceof Array && rule instanceof Function){
         /**多对一映射 */
-        this.multiToSingle(source, target, rule, async);
+        this.multiToSingle(source, target, rule, async, Thenable);
     }else if(target instanceof Array && rule instanceof Array){
         /**一对多 */
-        this.singleToMulti(source, target, rule, async);
+        this.singleToMulti(source, target, rule, async, Thenable);
     }else if(typeof source === 'string' && typeof target === 'string'){
         /**一对一 */
-        this.singleToSingle(source, target, rule, async);
+        this.singleToSingle(source, target, rule, async, Thenable);
     }
 };
 
@@ -31,7 +32,7 @@ rWatch.prototype.wrapAsync = function(arg1, target, targetValue, context, rule){
     rule.call(context, arg1, targetValue, callback);
 };
 
-rWatch.prototype.singleToSingle = function(source, target, rule, async){
+rWatch.prototype.singleToSingle = function(source, target, rule, async, Thenable){
     var context = this.context,
         self = this;
     
@@ -41,13 +42,17 @@ rWatch.prototype.singleToSingle = function(source, target, rule, async){
         if(async){
             self.wrapAsync(newValue, target, targetValue, context, rule);
         }else{
-            context.$update(target, rule.call(context, newValue, targetValue));
+            var result = rule.call(context, newValue, targetValue);
+            context.$update(target, result);
+            Thenable.tapable.applyPluginsWaterfall('then', result);
         }
     });
 
 };
 
-rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async){
+
+
+rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, Thenable){
     var context = this.context,
         self = this;
 
@@ -79,14 +84,16 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async){
                 if(async){
                     self.wrapAsync(sources, target, targetValue, context, rule);
                 }else{
-                    context.$update(targetAttr, rule.call(context, sources, targetValue));
+                    var result = rule.call(context, sources, targetValue);
+                    context.$update(targetAttr, result);
+                    Thenable.tapable.applyPluginsWaterfall('then', result);
                 }
             }));
         });
     }, 0);
 };
 
-rWatch.prototype.singleToMulti = function(source, targets, rules, async){
+rWatch.prototype.singleToMulti = function(source, targets, rules, async, Thenable){
     var context = this.context,
         self = this;
 
@@ -95,14 +102,18 @@ rWatch.prototype.singleToMulti = function(source, targets, rules, async){
     });
     
     context.$watch(source, throttle(function(newValue){
+        var targetValues = [];
         targets.forEach(function(item, index){
             var targetValue = context.$get(item);
             if(async){
                 self.wrapAsync(newValue, item, targetValue, context, rules[index]);
             }else{
-                context.$update(item, rules[index].call(context, newValue, targetValue));
+                var result = rules[index].call(context, newValue, targetValue);
+                context.$update(item, result);
+                targetValues.push(result);
             }
         });
+        Thenable.tapable.applyPluginsWaterfall('then', targetValues);
     }));
 };
 
@@ -117,7 +128,10 @@ rWatch.prototype.addPrimitiveWatcher = function(name, obj){
 rWatch.prototype.watch = function(sourceAttrs, targetAttr, rule){
     if(!sourceAttrs.length) return;
 
-    this.judgeMapType(sourceAttrs, targetAttr, rule);
+    var Thenable = new thenable();;
+    this.judgeMapType(sourceAttrs, targetAttr, rule, false, Thenable);
+
+    return Thenable;
 };
 
 rWatch.prototype.asyncWatch = function(sourceAttrs, targetAttr, rule){

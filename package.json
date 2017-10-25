@@ -23,7 +23,9 @@
     "url": "https://github.com/jabbla/rwatch/issues"
   },
   "homepage": "https://github.com/jabbla/rwatch#readme",
-  "dependencies": {},
+  "dependencies": {
+    "tapable": "^0.2.8"
+  },
   "devDependencies": {
     "webpack": "^3.8.1"
   }
