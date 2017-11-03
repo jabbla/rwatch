@@ -49,7 +49,7 @@ var App = Regular.extend({
     },
     config: function(data){
         var self = this;
-        var watcher = this.rwatch(this);
+        var watcher = this.rwatch();
 
         watcher.watch('tabState.selected', ['selectState.selected', 'selectState.source'], [function(source, target){
             return 1;
@@ -60,11 +60,9 @@ var App = Regular.extend({
             console.log(targets);
         });
 
-        // watcher.asyncWatch('tabState.selected', 'title', function(source, target, callback){
-        //     setTimeout(function(){
-        //         callback('异步更新title1');
-        //     }, 5000);
-        // });
+        watcher.watch('tabState.selected', ['test1', 'test2'], function(source, target){
+            return source;
+        });
 
         watcher.watch('tabState.selected', 'title', function(source, target, callback){
             return source;
@@ -80,8 +78,7 @@ var App = Regular.extend({
                 return {name: item.name+mainSelected, key: item.name}
             });
         }).then(function(target){
-            alert(target);
-            console.log(target);
+            
         });
     },
     onSelect: function(e){

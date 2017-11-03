@@ -11,10 +11,10 @@ function rWatch(context){
 }
 
 rWatch.prototype.judgeMapType = function(source, target, rule, async, Thenable){
-    if(source instanceof Array && rule instanceof Function){
+    if(source instanceof Array && typeof target === 'string'){
         /**多对一映射 */
         this.multiToSingle(source, target, rule, async, Thenable);
-    }else if(target instanceof Array && rule instanceof Array){
+    }else if(target instanceof Array && typeof source === 'string'){
         /**一对多 */
         this.singleToMulti(source, target, rule, async, Thenable);
     }else if(typeof source === 'string' && typeof target === 'string'){
@@ -37,7 +37,6 @@ rWatch.prototype.singleToSingle = function(source, target, rule, async, Thenable
         self = this;
     
     context.$watch(source, function(newValue){
-        
         var targetValue = context.$get(target);
         if(async){
             self.wrapAsync(newValue, target, targetValue, context, rule);
@@ -108,7 +107,12 @@ rWatch.prototype.singleToMulti = function(source, targets, rules, async, Thenabl
             if(async){
                 self.wrapAsync(newValue, item, targetValue, context, rules[index]);
             }else{
-                var result = rules[index].call(context, newValue, targetValue);
+                var result;
+                if(rules instanceof Function){
+                    result = rules.call(context, newValue, targetValue);
+                }else{
+                    result = rules[index].call(context, newValue, targetValue)
+                }
                 context.$update(item, result);
                 targetValues.push(result);
             }
