@@ -1,6 +1,6 @@
 {
   "name": "rwatcher",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "wactch for regular",
   "main": "index.js",
   "directories": {
@@ -23,7 +23,9 @@
     "url": "https://github.com/jabbla/rwatch/issues"
   },
   "homepage": "https://github.com/jabbla/rwatch#readme",
-  "dependencies": {},
+  "dependencies": {
+    "tapable": "^0.2.8"
+  },
   "devDependencies": {
     "webpack": "^3.8.1"
   }

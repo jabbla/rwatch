@@ -49,31 +49,38 @@ var App = Regular.extend({
     },
     config: function(data){
         var self = this;
-        var watcher = this.rwatch(this);
+        var watcher = this.rwatch();
 
         watcher.watch('tabState.selected', ['selectState.selected', 'selectState.source'], [function(source, target){
             return 1;
         }, function(source, target){
-            console.log(target);
             var selectedKey = source;
             return config.selectSource[selectedKey];
+        }]).then(function(targets){
+            console.log(targets);
+        });
+
+        watcher.watch('tabState.selected', ['test1', 'test2'], [function(source, target){
+            return source;
+        }, function(source, target){
+            return source;
         }]);
 
-        watcher.asyncWatch('tabState.selected', 'title', function(source, target, callback){
-            console.log(target);
-            setTimeout(function(){
-                callback('异步更新title1');
-            }, 5000);
+        watcher.watch('tabState.selected', 'title', function(source, target, callback){
+            return source;
+        }).then(function(target){
+            //alert(target);
         });
         
         watcher.watch(['tabState.selected', 'selectState.source'], 'tableState.columns', function(sources, target){
             var mainSelected = sources[0],
                 selectSource = sources[1];
             
-            console.log(target);
             return selectSource.map(function(item){
                 return {name: item.name+mainSelected, key: item.name}
             });
+        }).then(function(target){
+            
         });
     },
     onSelect: function(e){

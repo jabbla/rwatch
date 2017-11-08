@@ -76,6 +76,21 @@ watcher.asyncWatch('source', 'target', function(source, target, callback){
 });
 ```
 
+#### 更新监听
+> 在watch之后调用then方法实现更新监听，可以链式调用then，基于tapable的applyPluginsWaterfall实现，目前不支持asyncWatch方法
+
+```js
+watcher.watch('source', 'target', function(){
+    return 1; //1 将作为target属性的最终值
+}).then(function(target){
+    //这里拿到更新后的target属性值
+    return 2;
+}).then(function(target){
+    //这里拿到上一个then中的返回值2
+})
+```
+
+
 下面的例子同样适用于``asyncWatch``方法
 
 #### 一对一映射
@@ -95,6 +110,8 @@ watcher.watch('select.source', 'headers', function(source, target){
 
 ```js
 watcher.watch('tab.current', ['select.source', 'select1.source'], [MapSelect, MapSelect1]);
+or
+watcher.watch('tab.current', ['select.source', 'select1.source'], MapSelect);
 ```
 
 #### 多对一映射
