@@ -82,11 +82,13 @@ watcher.asyncWatch('source', 'target', function(source, target, callback){
 ```js
 watcher.watch('source', 'target', function(){
     return 1; //1 将作为target属性的最终值
-}).then(function(target){
+}).then(function(target, source){
     //这里拿到更新后的target属性值
+    //source为{newValue, oldValue}对象
     return 2;
-}).then(function(target){
+}).then(function(target, source){
     //这里拿到上一个then中的返回值2
+    //source为{newValue, oldValue}对象
 })
 ```
 

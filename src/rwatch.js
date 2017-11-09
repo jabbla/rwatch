@@ -36,16 +36,16 @@ rWatch.prototype.singleToSingle = function(source, target, rule, async, Thenable
     var context = this.context,
         self = this;
     
-    context.$watch(source, function(newValue){
+    context.$watch(source, throttle(function(newValue, oldValue){
         var targetValue = context.$get(target);
         if(async){
             self.wrapAsync(newValue, target, targetValue, context, rule);
         }else{
             var result = rule.call(context, newValue, targetValue);
             context.$update(target, result);
-            Thenable.tapable.applyPluginsWaterfall('then', result);
+            Thenable.tapable.applyPluginsWaterfall('then', result, {newValue: newValue, oldValue: oldValue});
         }
-    });
+    }));
 
 };
 
@@ -74,7 +74,7 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
     setTimeout(function(){
         self.attrsFilter(attrs).forEach(function(item) {
             var source = attrs[item.index];
-            context.$watch(source.name, throttle(function(newValue){
+            context.$watch(source.name, throttle(function(newValue, oldValue){
                 source.value = newValue;
 
                 var sources = attrs.map(function(item){return item.value});
@@ -85,7 +85,7 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
                 }else{
                     var result = rule.call(context, sources, targetValue);
                     context.$update(targetAttr, result);
-                    Thenable.tapable.applyPluginsWaterfall('then', result);
+                    Thenable.tapable.applyPluginsWaterfall('then', result, {newValue: newValue, oldValue: oldValue});
                 }
             }));
         });
@@ -100,7 +100,7 @@ rWatch.prototype.singleToMulti = function(source, targets, rules, async, Thenabl
         self.buildDep(source, item);
     });
     
-    context.$watch(source, throttle(function(newValue){
+    context.$watch(source, throttle(function(newValue, oldValue){
         var targetValues = [];
         targets.forEach(function(item, index){
             var targetValue = context.$get(item);
@@ -117,7 +117,7 @@ rWatch.prototype.singleToMulti = function(source, targets, rules, async, Thenabl
                 targetValues.push(result);
             }
         });
-        Thenable.tapable.applyPluginsWaterfall('then', targetValues);
+        Thenable.tapable.applyPluginsWaterfall('then', targetValues, {newValue: newValue, oldValue: oldValue});
     }));
 };
 

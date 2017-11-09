@@ -56,7 +56,7 @@ var App = Regular.extend({
         }, function(source, target){
             var selectedKey = source;
             return config.selectSource[selectedKey];
-        }]).then(function(targets){
+        }]).then(function(targets, source){
             console.log(targets);
         });
 
@@ -68,7 +68,8 @@ var App = Regular.extend({
 
         watcher.watch('tabState.selected', 'title', function(source, target, callback){
             return source;
-        }).then(function(target){
+        }).then(function(target, source){
+            console.log(source);
             //alert(target);
         });
         
@@ -79,8 +80,8 @@ var App = Regular.extend({
             return selectSource.map(function(item){
                 return {name: item.name+mainSelected, key: item.name}
             });
-        }).then(function(target){
-            
+        }).then(function(target, source){
+            console.log(source);
         });
     },
     onSelect: function(e){
