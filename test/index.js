@@ -83,6 +83,7 @@ var App = Regular.extend({
         }).then(function(target, source){
             console.log(source);
         });
+        console.log(watcher.displayRelationGraph());
     },
     onSelect: function(e){
         var data = this.data;

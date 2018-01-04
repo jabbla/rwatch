@@ -211,13 +211,25 @@ rWatch.prototype.recordNodesMap = function(option){
 
     if(!sourceNode){
         sourceNode = nodesMap[sourceAttr] = new Node({
-            attrName: sourceAttr,
-            target: targetNode
+            attrName: sourceAttr
         })
-    }else{
-        sourceNode.setTarget(targetNode);
     }
-
+    sourceNode.setTarget(targetNode);
+    targetNode.setSource(sourceNode);
 }
+
+rWatch.prototype.displayRelationGraph = function(){
+    var nodesMap = this.nodesMap,
+        roots = [];
+
+    /**寻找根节点 */
+    for(var attr in nodesMap){
+        var node = nodesMap[attr];
+        if(node.sources.length === 0){
+            roots.push(node);
+        }
+    }
+    return roots;
+};
 
 module.exports = rWatch;
