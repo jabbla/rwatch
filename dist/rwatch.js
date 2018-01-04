@@ -94,11 +94,14 @@ var findInTree = utils.findInTree;
 var throttle = utils.throttle;
 var Typeof = utils.typeOf;
 var thenable = __webpack_require__(3);
+var Node = __webpack_require__(5);
 
 
 function rWatch(context){
     this.context = context;
     this.depTree = {};
+    this.nodesMap = {};
+    this.root = null;
 }
 
 rWatch.prototype.judgeMapType = function(source, target, rule, async, Thenable){
@@ -127,6 +130,7 @@ rWatch.prototype.singleToSingle = function(source, target, rule, async, Thenable
     var context = this.context,
         self = this;
     
+    this.recordNodesMap({source: source, target: target});
     context.$watch(source, throttle(function(newValue, oldValue){
         var targetValue = context.$get(target);
         if(async){
@@ -149,6 +153,7 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
     var attrs = sourceAttrs.map(function(item){
         self.buildDep(item, targetAttr);
 
+        self.recordNodesMap({source: item, target: '_connector_'});
         var value = context.$get(item),
             result = {};
 
@@ -162,6 +167,7 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
         });
     });
 
+    self.recordNodesMap({source: '_connector_', target: targetAttr});
     setTimeout(function(){
         self.attrsFilter(attrs).forEach(function(item) {
             var source = attrs[item.index];
@@ -189,6 +195,7 @@ rWatch.prototype.singleToMulti = function(source, targets, rules, async, Thenabl
 
     targets.forEach(function(item){
         self.buildDep(source, item);
+        self.recordNodesMap({source: source, target: item});
     });
     
     context.$watch(source, throttle(function(newValue, oldValue){
@@ -223,7 +230,7 @@ rWatch.prototype.addPrimitiveWatcher = function(name, obj){
 rWatch.prototype.watch = function(sourceAttrs, targetAttr, rule){
     if(!sourceAttrs.length) return;
 
-    var Thenable = new thenable();;
+    var Thenable = new thenable();
     this.judgeMapType(sourceAttrs, targetAttr, rule, false, Thenable);
 
     return Thenable;
@@ -277,6 +284,32 @@ rWatch.prototype.attrsFilter = function(attrs){
     });
 
 };
+
+rWatch.prototype.recordNodesMap = function(option){
+    var option = option || {},
+        nodesMap = this.nodesMap,
+        sourceAttr = option.source,
+        targetAttr = option.target;
+
+    var sourceNode = nodesMap[sourceAttr],
+        targetNode = nodesMap[targetAttr];
+    
+    if(!targetNode){
+        targetNode = nodesMap[targetAttr] = new Node({
+            attrName: targetAttr
+        });
+    }
+
+    if(!sourceNode){
+        sourceNode = nodesMap[sourceAttr] = new Node({
+            attrName: sourceAttr,
+            target: targetNode
+        })
+    }else{
+        sourceNode.setTarget(targetNode);
+    }
+
+}
 
 module.exports = rWatch;
 
@@ -742,6 +775,26 @@ Tapable.prototype.apply = function apply() {
 	}
 };
 
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+function Node(option){
+    this.option = option || {};
+    this.targets = [];
+    option.target && this.targets.push(option.target);
+    this.attrName = option.attrName;
+}
+
+Node.prototype.setTarget = function(targetNode){
+    if(!targetNode){
+        return;
+    }
+    this.targets.indexOf(targetNode) === -1 && this.targets.push(targetNode);
+};
+
+module.exports = Node;
 
 /***/ })
 /******/ ]);
