@@ -232,4 +232,42 @@ rWatch.prototype.displayRelationGraph = function(){
     return roots;
 };
 
+rWatch.prototype._buildChart = function(){
+    var container = document.createElement('div'),
+        oBody = document.getElementsByTagName('body')[0],
+        cdnLink = 'https://cdn.bootcss.com/echarts/3.8.5/echarts.min.js';
+
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.position = 'fixed';
+    oBody.appendChild(container);
+
+    var outterChartApiDom = document.createElement('script');
+
+    oBody.appendChild(outterChartApiDom);
+    outterChartApiDom.setAttribute('src', cdnLink);
+
+    var chartOption = {
+        title: {
+            text: 'ECharts 入门示例'
+        },
+        tooltip: {},
+        legend: {
+            data:['销量']
+        },
+        xAxis: {
+            data: ["衬衫","羊毛衫","雪纺衫","裤子","高跟鞋","袜子"]
+        },
+        yAxis: {},
+        series: [{
+            name: '销量',
+            type: 'bar',
+            data: [5, 20, 36, 10, 10, 20]
+        }]
+    };
+    outterChartApiDom.onload = function(){
+        var myChart = window.echarts.init(container);
+    };
+}
+
 module.exports = rWatch;
