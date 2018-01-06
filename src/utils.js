@@ -56,4 +56,18 @@ utils.typeOf = function(item){
     return toString.call(item).slice(8, -1);
 }
 
+utils.findMapRoots = function(map){
+    var roots = [];
+
+    /**寻找根节点 */
+    for(var attr in map){
+        var node = map[attr];
+        if(node.sources.length === 0){
+            roots.push(node);
+        }
+    }
+
+    return roots;
+};
+
 module.exports = utils;

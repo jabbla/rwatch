@@ -21,4 +21,11 @@ Node.prototype.setSource = function(sourceNode){
     this.sources.indexOf(sourceNode) === -1 && this.sources.push(sourceNode);
 };
 
+Node.prototype.getAttrName = function(){
+    return this.attrName;
+};
+
+Node.prototype.getTargets = function(){
+    return this.targets;
+};
 module.exports = Node;
