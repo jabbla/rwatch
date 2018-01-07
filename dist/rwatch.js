@@ -95,6 +95,7 @@ var throttle = utils.throttle;
 var Typeof = utils.typeOf;
 var thenable = __webpack_require__(3);
 var Node = __webpack_require__(5);
+var ChartBuilder = __webpack_require__(6);
 
 
 function rWatch(context){
@@ -102,6 +103,8 @@ function rWatch(context){
     this.depTree = {};
     this.nodesMap = {};
     this.root = null;
+    this.currentConnector = 0;
+    this.connectorName = '_medium_';
 }
 
 rWatch.prototype.judgeMapType = function(source, target, rule, async, Thenable){
@@ -148,12 +151,14 @@ rWatch.prototype.singleToSingle = function(source, target, rule, async, Thenable
 
 rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, Thenable){
     var context = this.context,
-        self = this;
+        self = this,
+        currentConnector = this.currentConnector++,
+        connector = this.connectorName + currentConnector;
 
     var attrs = sourceAttrs.map(function(item){
         self.buildDep(item, targetAttr);
 
-        self.recordNodesMap({source: item, target: '_connector_'});
+        self.recordNodesMap({source: item, target: connector + ''});
         var value = context.$get(item),
             result = {};
 
@@ -167,7 +172,7 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
         });
     });
 
-    self.recordNodesMap({source: '_connector_', target: targetAttr});
+    self.recordNodesMap({source: connector, target: targetAttr});
     setTimeout(function(){
         self.attrsFilter(attrs).forEach(function(item) {
             var source = attrs[item.index];
@@ -309,18 +314,13 @@ rWatch.prototype.recordNodesMap = function(option){
     targetNode.setSource(sourceNode);
 }
 
-rWatch.prototype.displayRelationGraph = function(){
-    var nodesMap = this.nodesMap,
-        roots = [];
-
-    /**寻找根节点 */
-    for(var attr in nodesMap){
-        var node = nodesMap[attr];
-        if(node.sources.length === 0){
-            roots.push(node);
-        }
-    }
-    return roots;
+rWatch.prototype.displayRelationGraph = function(option){
+    var roots = utils.findMapRoots(this.nodesMap),
+        option = option || {},
+        container = option.container,
+        containerWraper = option.containerWraper,
+        chartBuilder = new ChartBuilder({roots: roots, container: container, containerWraper: containerWraper});
+    chartBuilder.build();
 };
 
 module.exports = rWatch;
@@ -386,6 +386,20 @@ utils.typeOf = function(item){
     }
     return toString.call(item).slice(8, -1);
 }
+
+utils.findMapRoots = function(map){
+    var roots = [];
+
+    /**寻找根节点 */
+    for(var attr in map){
+        var node = map[attr];
+        if(node.sources.length === 0){
+            roots.push(node);
+        }
+    }
+
+    return roots;
+};
 
 module.exports = utils;
 
@@ -815,7 +829,190 @@ Node.prototype.setSource = function(sourceNode){
     this.sources.indexOf(sourceNode) === -1 && this.sources.push(sourceNode);
 };
 
+Node.prototype.getAttrName = function(){
+    return this.attrName;
+};
+
+Node.prototype.getTargets = function(){
+    return this.targets;
+};
 module.exports = Node;
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
+
+function ChartBuilder(option){
+    this.roots = option.roots;
+    this.symbolSize = option.symbolSize || 60;
+    this.symbolGap = option.symbolGap || 10;
+    this.formatedData = {data: [], links: []};
+    this.pointsIndexer = {},
+    this.chartOption = {};
+    this.container = option.container || document.createElement('div');
+    this.containerWraper = option.containerWraper || document.getElementsByTagName('body')[0];
+    this.chartTitle = option.chartTitle || '';
+}
+
+ChartBuilder.prototype.build = function(){
+    this._formatData();
+    console.log(this.formatedData);
+    this._configChartOptions();
+    this._createLayout();
+};
+
+ChartBuilder.prototype._createPoint = function(option){
+    var attrName = option.attrName,
+        pointsIndexer = this.pointsIndexer,
+        points = this.formatedData.data;
+    
+    if(!pointsIndexer[attrName]){
+        pointsIndexer[attrName] = true;
+        points.push({
+            name: attrName,
+            value: attrName,
+            x: option.x,
+            y: option.y
+        });
+    }
+};
+
+ChartBuilder.prototype._createLink = function(option){
+    var links = this.formatedData.links,
+        sourceAttrName = option.sourceAttrName,
+        targetAttrName = option.targetAttrName;
+
+    links.push({
+        source: sourceAttrName,
+        target: targetAttrName,
+        
+    });
+};
+
+ChartBuilder.prototype._formatData = function(){
+    var roots = this.roots,
+        self = this, symbolSize = this.symbolSize,
+        symbolGap = this.symbolGap;
+
+    var formatUnit = function(option){
+        var unitRoot = option.root,
+            targets = unitRoot.getTargets();
+        
+        if(targets.length === 0){
+            return;
+        }
+        var source = unitRoot,
+            sourceAttrName = source.getAttrName();
+            parentX = option.coordinate.x, parentY = option.coordinate.y;
+
+        self._createPoint({attrName: sourceAttrName, x: parentX, y: parentY});
+        console.log(unitRoot);
+        targets.forEach(function(target, index){
+            var targetAttrName = target.getAttrName(),
+                childX = option.coordinate.x + symbolGap + symbolSize,
+                childY = index*(symbolGap + symbolSize);
+
+            self._createPoint({attrName: targetAttrName, x: childX, y: childY});
+            self._createLink({sourceAttrName: sourceAttrName, targetAttrName: targetAttrName});
+
+            formatUnit({root: target, coordinate: {x: childX, y: childY}});
+        });
+    };
+    roots.forEach(function(root, index){
+        formatUnit({root: root, coordinate: {x: 0, y: 0}});
+    });
+};
+
+ChartBuilder.prototype._configChartOptions = function(){
+    var chartOption = this.chartOption,
+        data = this.formatedData.data,
+        links = this.formatedData.links,
+        symbolSize = this.symbolSize,
+        chartTitle = this.chartTitle;
+
+    Object.assign(chartOption, {
+        title: {
+            text: chartTitle
+        },
+        tooltip: {},
+        animationDurationUpdate: 1500,
+        animationEasingUpdate: 'quinticInOut',
+        series : [
+            {
+                type: 'graph',
+                layout: 'none',
+                symbolSize: symbolSize,
+                roam: true,
+                label: {
+                    normal: {
+                        show: true
+                    }
+                },
+                edgeSymbol: ['circle', 'arrow'],
+                edgeSymbolSize: [4, 10],
+                edgeLabel: {
+                    normal: {
+                        textStyle: {
+                            fontSize: 20
+                        }
+                    }
+                },
+                data: data,
+                // links: [],
+                links: links,
+                lineStyle: {
+                    normal: {
+                        width: 3,
+                        curveness: -0.3
+                    }
+                }
+            }
+        ]
+    });
+};
+
+ChartBuilder.prototype._createLayout = function(){
+    var oContainerWraper = this.containerWraper,
+        oChartWraper = document.createElement('div'),
+        oContainer = this.container,
+        chartOption = this.chartOption;
+
+    Object.assign(oContainer.style, {
+        position: 'fixed',
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'black',
+        opacity: 0.8,
+        top: 0,
+        left: 0
+    });
+
+    Object.assign(oChartWraper.style, {
+        width: '100%',
+        height: '100%'
+    });
+    
+    var echartsScript = document.createElement('script');
+    echartsScript.src = 'https://cdn.bootcss.com/echarts/3.8.5/echarts.min.js';
+    echartsScript.onload = function(){
+
+        var chart = window.echarts.init(oChartWraper);
+        chart.setOption(chartOption);
+    };
+
+    oContainerWraper.appendChild(echartsScript);
+    oContainerWraper.appendChild(oContainer);
+    oContainer.appendChild(oChartWraper);
+};
+
+module.exports = ChartBuilder;
+
+
+
+
+
+
+
 
 /***/ })
 /******/ ]);

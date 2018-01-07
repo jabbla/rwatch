@@ -128,5 +128,36 @@ watcher.watch(['select.current', 'select1.current'], 'selectSate', function(sour
 });
 ```
 
+#### 属性映射关系图
+
+使用``displayRelationGraph(option)``方法生成属性映射关系图
+
+**可配置项**
+```js
+/* option对象 */
+{
+    container: document.createElement('div'),    //关系图父容器dom实例，默认为fixed的空div
+    containerWraper: body  //关系图容器的父元素，默认为body标签
+}
+```
+
+**例子**
+
+```js
+var watcher = this.rwatch();
+
+watcher.watch('tabState.selected', ['selectState.selected', 'selectState.source'], [...]);
+watcher.watch('tabState.selected', 'title', ..);
+watcher.watch(['tabState.selected', 'selectState.source'], 'tableState.columns', ..);
+
+watcher.displayRelationGraph();
+```
+
+生成的关系图：
+> 其中_medium_0表示中介节点，表示多对一关系
+
+![属性映射关系图][2]
+
 
   [1]: https://codepen.io/jabbla/pen/rGeodQ
+  [2]: http://oc3wui92y.bkt.clouddn.com/%E6%8D%95%E8%8E%B7.JPG

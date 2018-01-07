@@ -57,19 +57,17 @@ var App = Regular.extend({
             var selectedKey = source;
             return config.selectSource[selectedKey];
         }]).then(function(targets, source){
-            console.log(targets);
         });
 
-        watcher.watch('tabState.selected', ['test1', 'test2'], [function(source, target){
-            return source;
-        }, function(source, target){
-            return source;
-        }]);
+        // watcher.watch('tabState.selected', ['test1', 'test2'], [function(source, target){
+        //     return source;
+        // }, function(source, target){
+        //     return source;
+        // }]);
 
         watcher.watch('tabState.selected', 'title', function(source, target, callback){
             return source;
         }).then(function(target, source){
-            console.log(source);
             //alert(target);
         });
         
@@ -81,9 +79,8 @@ var App = Regular.extend({
                 return {name: item.name+mainSelected, key: item.name}
             });
         }).then(function(target, source){
-            console.log(source);
         });
-        console.log(watcher.displayRelationGraph());
+        watcher.displayRelationGraph();
     },
     onSelect: function(e){
         var data = this.data;

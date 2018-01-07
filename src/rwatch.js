@@ -12,6 +12,8 @@ function rWatch(context){
     this.depTree = {};
     this.nodesMap = {};
     this.root = null;
+    this.currentConnector = 0;
+    this.connectorName = '_medium_';
 }
 
 rWatch.prototype.judgeMapType = function(source, target, rule, async, Thenable){
@@ -58,12 +60,14 @@ rWatch.prototype.singleToSingle = function(source, target, rule, async, Thenable
 
 rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, Thenable){
     var context = this.context,
-        self = this;
+        self = this,
+        currentConnector = this.currentConnector++,
+        connector = this.connectorName + currentConnector;
 
     var attrs = sourceAttrs.map(function(item){
         self.buildDep(item, targetAttr);
 
-        self.recordNodesMap({source: item, target: '_connector_'});
+        self.recordNodesMap({source: item, target: connector + ''});
         var value = context.$get(item),
             result = {};
 
@@ -77,7 +81,7 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
         });
     });
 
-    self.recordNodesMap({source: '_connector_', target: targetAttr});
+    self.recordNodesMap({source: connector, target: targetAttr});
     setTimeout(function(){
         self.attrsFilter(attrs).forEach(function(item) {
             var source = attrs[item.index];
@@ -219,11 +223,12 @@ rWatch.prototype.recordNodesMap = function(option){
     targetNode.setSource(sourceNode);
 }
 
-rWatch.prototype.displayRelationGraph = function(){
-    var roots = utils.findMapRoots(this.nodesMap);
-
-    var chartBuilder = new ChartBuilder({roots: roots});
-
+rWatch.prototype.displayRelationGraph = function(option){
+    var roots = utils.findMapRoots(this.nodesMap),
+        option = option || {},
+        container = option.container,
+        containerWraper = option.containerWraper,
+        chartBuilder = new ChartBuilder({roots: roots, container: container, containerWraper: containerWraper});
     chartBuilder.build();
 };
 
