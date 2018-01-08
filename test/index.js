@@ -59,17 +59,17 @@ var App = Regular.extend({
         }]).then(function(targets, source){
         });
 
-        // watcher.watch('tabState.selected', ['test1', 'test2'], [function(source, target){
-        //     return source;
-        // }, function(source, target){
-        //     return source;
-        // }]);
+        watcher.watch('tabState.selected', ['test2'], [function(source, target){
+            return source;
+        }]);
 
         watcher.watch('tabState.selected', 'title', function(source, target, callback){
             return source;
         }).then(function(target, source){
             //alert(target);
         });
+
+        watcher.watch('test1', ['test2', 'test3', 'test4'], function(){});
         
         watcher.watch(['tabState.selected', 'selectState.source'], 'tableState.columns', function(sources, target){
             var mainSelected = sources[0],

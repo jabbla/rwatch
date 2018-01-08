@@ -856,7 +856,6 @@ function ChartBuilder(option){
 
 ChartBuilder.prototype.build = function(){
     this._formatData();
-    console.log(this.formatedData);
     this._configChartOptions();
     this._createLayout();
 };
@@ -864,9 +863,10 @@ ChartBuilder.prototype.build = function(){
 ChartBuilder.prototype._createPoint = function(option){
     var attrName = option.attrName,
         pointsIndexer = this.pointsIndexer,
-        points = this.formatedData.data;
+        points = this.formatedData.data,
+        existed = pointsIndexer[attrName];
     
-    if(!pointsIndexer[attrName]){
+    if(!existed){
         pointsIndexer[attrName] = true;
         points.push({
             name: attrName,
@@ -875,6 +875,11 @@ ChartBuilder.prototype._createPoint = function(option){
             y: option.y
         });
     }
+    return existed;
+};
+
+ChartBuilder.prototype._existPoint = function(attrName){
+    return this.pointsIndexer[attrName];
 };
 
 ChartBuilder.prototype._createLink = function(option){
@@ -892,12 +897,15 @@ ChartBuilder.prototype._createLink = function(option){
 ChartBuilder.prototype._formatData = function(){
     var roots = this.roots,
         self = this, symbolSize = this.symbolSize,
-        symbolGap = this.symbolGap;
+        symbolGap = this.symbolGap,
+        step = symbolSize + symbolGap,
+        stepX = step, stepY = step,
+        currentY = 0, maxY = roots.map(function(root, index){ return  0});
 
-    var formatUnit = function(option){
+    var formatUnit = function(option, rootIndex){
         var unitRoot = option.root,
             targets = unitRoot.getTargets();
-        
+
         if(targets.length === 0){
             return;
         }
@@ -906,21 +914,32 @@ ChartBuilder.prototype._formatData = function(){
             parentX = option.coordinate.x, parentY = option.coordinate.y;
 
         self._createPoint({attrName: sourceAttrName, x: parentX, y: parentY});
-        console.log(unitRoot);
         targets.forEach(function(target, index){
             var targetAttrName = target.getAttrName(),
-                childX = option.coordinate.x + symbolGap + symbolSize,
-                childY = index*(symbolGap + symbolSize);
+                childX = option.coordinate.x + stepX,
+                childY = index*stepY + option.coordinate.y;
 
-            self._createPoint({attrName: targetAttrName, x: childX, y: childY});
+            if(maxY[rootIndex] < childY){
+                maxY[rootIndex] = childY;
+            }
+
+            var existed = self._createPoint({attrName: targetAttrName, x: childX, y: childY});
+            if(existed){
+                option.coordinate.y -= step;
+            }
             self._createLink({sourceAttrName: sourceAttrName, targetAttrName: targetAttrName});
 
-            formatUnit({root: target, coordinate: {x: childX, y: childY}});
+            formatUnit({root: target, coordinate: {x: childX, y: childY}}, rootIndex);
         });
     };
     roots.forEach(function(root, index){
-        formatUnit({root: root, coordinate: {x: 0, y: 0}});
+        var baseY = 0;
+        if(index !== 0){
+            baseY = maxY[index? index-1 : 0] + (stepY);
+        }
+        formatUnit({root: root, coordinate: {x: 0, y: baseY}}, index);
     });
+    this.maxY = maxY[maxY.length -1];
 };
 
 ChartBuilder.prototype._configChartOptions = function(){
@@ -934,7 +953,17 @@ ChartBuilder.prototype._configChartOptions = function(){
         title: {
             text: chartTitle
         },
+        left: 0,
         tooltip: {},
+        toolbox: {
+            feature: {
+                saveAsImage: {
+                    name: '关系图',
+                    pixelRatio: 2
+                }
+            },
+            left: 'left'
+        },
         animationDurationUpdate: 1500,
         animationEasingUpdate: 'quinticInOut',
         series : [
@@ -958,7 +987,6 @@ ChartBuilder.prototype._configChartOptions = function(){
                     }
                 },
                 data: data,
-                // links: [],
                 links: links,
                 lineStyle: {
                     normal: {
@@ -974,8 +1002,25 @@ ChartBuilder.prototype._configChartOptions = function(){
 ChartBuilder.prototype._createLayout = function(){
     var oContainerWraper = this.containerWraper,
         oChartWraper = document.createElement('div'),
+        oClose = document.createElement('a'),
+        oTrigger = document.createElement('div'),
         oContainer = this.container,
-        chartOption = this.chartOption;
+        chartOption = this.chartOption,
+        maxY = this.maxY,
+        windowScale = maxY / window.innerHeight;
+    
+    /**关闭按钮 */
+    Object.assign(oClose.style, {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        margin: '10px',
+        color: 'white'
+    });
+    oClose.innerHTML = '关闭';
+    oClose.onclick = function(){
+        oContainer.style.display = 'none'
+    };
 
     Object.assign(oContainer.style, {
         position: 'fixed',
@@ -984,25 +1029,49 @@ ChartBuilder.prototype._createLayout = function(){
         backgroundColor: 'black',
         opacity: 0.8,
         top: 0,
-        left: 0
+        left: 0,
+        display: 'none',
+        overflow: 'auto',
+        zIndex: '9999999999'
     });
 
     Object.assign(oChartWraper.style, {
         width: '100%',
-        height: '100%'
+        height: (windowScale * 100 * 2) + '%'
     });
     
     var echartsScript = document.createElement('script');
     echartsScript.src = 'https://cdn.bootcss.com/echarts/3.8.5/echarts.min.js';
     echartsScript.onload = function(){
-
+        oContainer.style.display = 'block';
         var chart = window.echarts.init(oChartWraper);
         chart.setOption(chartOption);
+        oContainer.style.display = 'none';
+    };
+    /**图表开关 */
+    Object.assign(oTrigger.style, {
+        position: 'fixed',
+        bottom: 0,
+        right: 0,
+        margin: '30px',
+        width: '50px',
+        height: '50px',
+        borderRadius: '50%',
+        lineHeight: '50px',
+        textAlign: 'center',
+        cursor: 'pointer',
+        backgroundColor: '#ddd'
+    });
+    oTrigger.innerHTML = '关系图';
+    oTrigger.onclick = function(){
+        oContainer.style.display = 'block';
     };
 
     oContainerWraper.appendChild(echartsScript);
     oContainerWraper.appendChild(oContainer);
+    oContainerWraper.appendChild(oTrigger);
     oContainer.appendChild(oChartWraper);
+    oContainer.appendChild(oClose);
 };
 
 module.exports = ChartBuilder;
