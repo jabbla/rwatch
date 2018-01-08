@@ -12,7 +12,6 @@ function ChartBuilder(option){
 
 ChartBuilder.prototype.build = function(){
     this._formatData();
-    console.log(this.formatedData);
     this._configChartOptions();
     this._createLayout();
 };
@@ -62,7 +61,6 @@ ChartBuilder.prototype._formatData = function(){
             parentX = option.coordinate.x, parentY = option.coordinate.y;
 
         self._createPoint({attrName: sourceAttrName, x: parentX, y: parentY});
-        console.log(unitRoot);
         targets.forEach(function(target, index){
             var targetAttrName = target.getAttrName(),
                 childX = option.coordinate.x + symbolGap + symbolSize,
@@ -114,7 +112,6 @@ ChartBuilder.prototype._configChartOptions = function(){
                     }
                 },
                 data: data,
-                // links: [],
                 links: links,
                 lineStyle: {
                     normal: {
@@ -130,8 +127,23 @@ ChartBuilder.prototype._configChartOptions = function(){
 ChartBuilder.prototype._createLayout = function(){
     var oContainerWraper = this.containerWraper,
         oChartWraper = document.createElement('div'),
+        oClose = document.createElement('a'),
+        oTrigger = document.createElement('div'),
         oContainer = this.container,
         chartOption = this.chartOption;
+
+    /**关闭按钮 */
+    Object.assign(oClose.style, {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        margin: '10px',
+        color: 'white'
+    });
+    oClose.innerHTML = '关闭';
+    oClose.onclick = function(){
+        oContainer.style.display = 'none'
+    };
 
     Object.assign(oContainer.style, {
         position: 'fixed',
@@ -140,7 +152,8 @@ ChartBuilder.prototype._createLayout = function(){
         backgroundColor: 'black',
         opacity: 0.8,
         top: 0,
-        left: 0
+        left: 0,
+        display: 'none'
     });
 
     Object.assign(oChartWraper.style, {
@@ -151,14 +164,35 @@ ChartBuilder.prototype._createLayout = function(){
     var echartsScript = document.createElement('script');
     echartsScript.src = 'https://cdn.bootcss.com/echarts/3.8.5/echarts.min.js';
     echartsScript.onload = function(){
-
+        oContainer.style.display = 'block';
         var chart = window.echarts.init(oChartWraper);
         chart.setOption(chartOption);
+        oContainer.style.display = 'none';
+    };
+    /**图表开关 */
+    Object.assign(oTrigger.style, {
+        position: 'fixed',
+        bottom: 0,
+        right: 0,
+        margin: '30px',
+        width: '50px',
+        height: '50px',
+        borderRadius: '50%',
+        lineHeight: '50px',
+        textAlign: 'center',
+        cursor: 'pointer',
+        backgroundColor: '#ddd'
+    });
+    oTrigger.innerHTML = '关系图';
+    oTrigger.onclick = function(){
+        oContainer.style.display = 'block';
     };
 
     oContainerWraper.appendChild(echartsScript);
     oContainerWraper.appendChild(oContainer);
+    oContainerWraper.appendChild(oTrigger);
     oContainer.appendChild(oChartWraper);
+    oContainer.appendChild(oClose);
 };
 
 module.exports = ChartBuilder;
