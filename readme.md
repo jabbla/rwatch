@@ -130,16 +130,7 @@ watcher.watch(['select.current', 'select1.current'], 'selectSate', function(sour
 
 #### 属性映射关系图
 
-使用``displayRelationGraph(option)``方法生成属性映射关系图
-
-**可配置项**
-```js
-/* option对象 */
-{
-    container: document.createElement('div'),    //关系图父容器dom实例，默认为fixed的空div
-    containerWraper: body  //关系图容器的父元素，默认为body标签
-}
-```
+使用``displayRelationGraph()``方法生成属性映射关系图
 
 **例子**
 
