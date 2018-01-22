@@ -314,7 +314,7 @@ rWatch.prototype.recordNodesMap = function(option){
     targetNode.setSource(sourceNode);
 }
 
-rWatch.prototype.displayRelationGraph = function(option){
+rWatch.prototype.displayRelationGraph = function(){
     var roots = utils.findMapRoots(this.nodesMap),
         option = option || {},
         container = option.container,
