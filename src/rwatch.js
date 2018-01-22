@@ -228,7 +228,8 @@ rWatch.prototype.displayRelationGraph = function(option){
         option = option || {},
         container = option.container,
         containerWraper = option.containerWraper,
-        chartBuilder = new ChartBuilder({roots: roots, container: container, containerWraper: containerWraper});
+        chartBuilder = new ChartBuilder({roots: roots, container: container, containerWraper: containerWraper, nodesMap: this.nodesMap});
+
     chartBuilder.build();
 };
 

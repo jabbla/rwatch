@@ -319,7 +319,8 @@ rWatch.prototype.displayRelationGraph = function(option){
         option = option || {},
         container = option.container,
         containerWraper = option.containerWraper,
-        chartBuilder = new ChartBuilder({roots: roots, container: container, containerWraper: containerWraper});
+        chartBuilder = new ChartBuilder({roots: roots, container: container, containerWraper: containerWraper, nodesMap: this.nodesMap});
+
     chartBuilder.build();
 };
 
@@ -840,14 +841,17 @@ module.exports = Node;
 
 /***/ }),
 /* 6 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+var graphComponent = __webpack_require__(7);
 
 function ChartBuilder(option){
     this.roots = option.roots;
     this.symbolSize = option.symbolSize || 60;
     this.symbolGap = option.symbolGap || 10;
     this.formatedData = {data: [], links: []};
-    this.pointsIndexer = {},
+    this.nodesMap = option.nodesMap;
+    this.pointsIndexer = {};
     this.chartOption = {};
     this.container = option.container || document.createElement('div');
     this.containerWraper = option.containerWraper || document.getElementsByTagName('body')[0];
@@ -894,8 +898,8 @@ ChartBuilder.prototype._createLink = function(option){
     });
 };
 
-ChartBuilder.prototype._formatData = function(){
-    var roots = this.roots,
+ChartBuilder.prototype._formatData = function(option){
+    var roots = (option && option.roots) || this.roots,
         self = this, symbolSize = this.symbolSize,
         symbolGap = this.symbolGap,
         step = symbolSize + symbolGap,
@@ -942,7 +946,7 @@ ChartBuilder.prototype._formatData = function(){
     this.maxY = maxY[maxY.length -1];
 };
 
-ChartBuilder.prototype._configChartOptions = function(){
+ChartBuilder.prototype._configChartOptions = function(option){
     var chartOption = this.chartOption,
         data = this.formatedData.data,
         links = this.formatedData.links,
@@ -1001,77 +1005,26 @@ ChartBuilder.prototype._configChartOptions = function(){
 
 ChartBuilder.prototype._createLayout = function(){
     var oContainerWraper = this.containerWraper,
-        oChartWraper = document.createElement('div'),
-        oClose = document.createElement('a'),
-        oTrigger = document.createElement('div'),
-        oContainer = this.container,
-        chartOption = this.chartOption,
-        maxY = this.maxY,
-        windowScale = maxY / window.innerHeight;
+        oContainer = this.container;
     
-    /**关闭按钮 */
-    Object.assign(oClose.style, {
-        position: 'absolute',
-        right: 0,
-        top: 0,
-        margin: '10px',
-        color: 'white'
-    });
-    oClose.innerHTML = '关闭';
-    oClose.onclick = function(){
-        oContainer.style.display = 'none'
-    };
-
-    Object.assign(oContainer.style, {
-        position: 'fixed',
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'black',
-        opacity: 0.8,
-        top: 0,
-        left: 0,
-        display: 'none',
-        overflow: 'auto',
-        zIndex: '9999999999'
-    });
-
-    Object.assign(oChartWraper.style, {
-        width: '100%',
-        height: (windowScale * 100 * 2) + '%'
-    });
     
-    var echartsScript = document.createElement('script');
-    echartsScript.src = 'https://cdn.bootcss.com/echarts/3.8.5/echarts.min.js';
-    echartsScript.onload = function(){
-        oContainer.style.display = 'block';
-        var chart = window.echarts.init(oChartWraper);
-        chart.setOption(chartOption);
-        oContainer.style.display = 'none';
-    };
-    /**图表开关 */
-    Object.assign(oTrigger.style, {
-        position: 'fixed',
-        bottom: 0,
-        right: 0,
-        margin: '30px',
-        width: '50px',
-        height: '50px',
-        borderRadius: '50%',
-        lineHeight: '50px',
-        textAlign: 'center',
-        cursor: 'pointer',
-        backgroundColor: '#ddd'
-    });
-    oTrigger.innerHTML = '关系图';
-    oTrigger.onclick = function(){
-        oContainer.style.display = 'block';
-    };
+    new graphComponent({data: {
+        maxY: this.maxY,
+        chartOption: this.chartOption,
+        ChartBuilder: this,
+    }}).$inject(oContainerWraper);
+};
 
-    oContainerWraper.appendChild(echartsScript);
-    oContainerWraper.appendChild(oContainer);
-    oContainerWraper.appendChild(oTrigger);
-    oContainer.appendChild(oChartWraper);
-    oContainer.appendChild(oClose);
+ChartBuilder.prototype.genDataWithRoots = function(option){
+    var nodesMap = this.nodesMap;
+    var roots = (option && option.rootNames.map(function(rootName){
+        return nodesMap[rootName];
+    })) || this.roots;
+    this.formatedData = {data: [], links: []};
+    this.pointsIndexer = {};
+
+    this._formatData({roots: roots});
+    this._configChartOptions();
 };
 
 module.exports = ChartBuilder;
@@ -1082,6 +1035,69 @@ module.exports = ChartBuilder;
 
 
 
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var tpl = __webpack_require__(8);
+
+var GraphComponent = Regular.extend({
+    template: tpl,
+    config: function(data){
+        this.data = Object.assign({
+            isOpen: false
+        }, data);
+    },
+    init: function(){
+        if(this.isOpen){
+            this.setChartWraperStyle();
+        }
+    },
+    setChartWraperStyle: function(){
+        var chartWraper = this.$refs.chartWraper,
+            maxY = this.data.maxY,
+            windowScale = maxY / window.innerHeight;
+
+        Object.assign(chartWraper.style, {
+            width: '100%',
+            height: (windowScale * 100 * 2) + '%'
+        });
+    },
+    onOpen: function(e){
+        this.data.isOpen = true;
+        setTimeout(function(){
+            this.setChartWraperStyle();
+        }.bind(this), 0);
+    },
+    onClose: function(e){
+        this.data.isOpen = false;
+    },
+    onLoad: function(){
+        var chartWraper = this.$refs.chartWraper;
+
+        this.data.chart = window.echarts.init(chartWraper);
+        this.data.chart.setOption(this.data.chartOption);
+    },
+    onQuery: function(){
+        var ChartBuilder = this.data.ChartBuilder;
+        ChartBuilder.genDataWithRoots({rootNames: [this.data.rootAttrName]});
+        this.data.chart.setOption(this.data.chartOption);
+    },
+    onReset: function(){
+        var ChartBuilder = this.data.ChartBuilder;
+        ChartBuilder.genDataWithRoots();
+        this.data.chart.setOption(this.data.chartOption);
+    }
+});
+
+module.exports = GraphComponent;
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports) {
+
+module.exports = "{#if !isOpen}\r\n<a \r\n    ref=\"test\"\r\n    style=\"position: fixed; display: block; width: 50px; height: 50px; border-radius: 50%; bottom: 50px; right: 50px; text-align: center; line-height: 50px; border: 1px solid #54a8f7;\"\r\n    on-click={this.onOpen($event)}\r\n>关系图</a>\r\n{#else}\r\n<div class=\"rwatch-relGraph\" style=\"position: fixed; width: 100%; height: 100%; overflow-y: auto; background: rgba(0, 0, 0, 0.8); top: 0;\">\r\n    <a\r\n        style=\"position: absolute; right: 0; top: 0; padding: 10px; color: white; z-index: 1;\"\r\n        on-click={this.onClose($event)}>关闭</a>\r\n    <div style=\"position: fixed; top: 0; padding: 20px; color: white; z-index: 9999;\">\r\n        输入根属性名称：<input type=\"text\" r-model={rootAttrName}/>\r\n        <button on-click={this.onQuery($event)}>查询</button>\r\n        <button on-click={this.onReset($event)}>重置</button>\r\n    </div>\r\n    <div ref=\"chartWraper\"></div>\r\n</div>\r\n<script src=\"https://cdn.bootcss.com/echarts/3.8.5/echarts.min.js\" on-load={this.onLoad($event)}></script>\r\n{/if}\r\n";
 
 /***/ })
 /******/ ]);

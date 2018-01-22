@@ -1,0 +1,20 @@
+{#if !isOpen}
+<a 
+    ref="test"
+    style="position: fixed; display: block; width: 50px; height: 50px; border-radius: 50%; bottom: 50px; right: 50px; text-align: center; line-height: 50px; border: 1px solid #54a8f7;"
+    on-click={this.onOpen($event)}
+>关系图</a>
+{#else}
+<div class="rwatch-relGraph" style="position: fixed; width: 100%; height: 100%; overflow-y: auto; background: rgba(0, 0, 0, 0.8); top: 0;">
+    <a
+        style="position: absolute; right: 0; top: 0; padding: 10px; color: white; z-index: 1;"
+        on-click={this.onClose($event)}>关闭</a>
+    <div style="position: fixed; top: 0; padding: 20px; color: white; z-index: 9999;">
+        输入根属性名称：<input type="text" r-model={rootAttrName}/>
+        <button on-click={this.onQuery($event)}>查询</button>
+        <button on-click={this.onReset($event)}>重置</button>
+    </div>
+    <div ref="chartWraper"></div>
+</div>
+<script src="https://cdn.bootcss.com/echarts/3.8.5/echarts.min.js" on-load={this.onLoad($event)}></script>
+{/if}
