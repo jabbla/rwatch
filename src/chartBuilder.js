@@ -1,9 +1,12 @@
+var graphComponent = require('./graphComponent/graphComponent.js');
+
 function ChartBuilder(option){
     this.roots = option.roots;
     this.symbolSize = option.symbolSize || 60;
     this.symbolGap = option.symbolGap || 10;
     this.formatedData = {data: [], links: []};
-    this.pointsIndexer = {},
+    this.nodesMap = option.nodesMap;
+    this.pointsIndexer = {};
     this.chartOption = {};
     this.container = option.container || document.createElement('div');
     this.containerWraper = option.containerWraper || document.getElementsByTagName('body')[0];
@@ -50,8 +53,8 @@ ChartBuilder.prototype._createLink = function(option){
     });
 };
 
-ChartBuilder.prototype._formatData = function(){
-    var roots = this.roots,
+ChartBuilder.prototype._formatData = function(option){
+    var roots = (option && option.roots) || this.roots,
         self = this, symbolSize = this.symbolSize,
         symbolGap = this.symbolGap,
         step = symbolSize + symbolGap,
@@ -98,7 +101,7 @@ ChartBuilder.prototype._formatData = function(){
     this.maxY = maxY[maxY.length -1];
 };
 
-ChartBuilder.prototype._configChartOptions = function(){
+ChartBuilder.prototype._configChartOptions = function(option){
     var chartOption = this.chartOption,
         data = this.formatedData.data,
         links = this.formatedData.links,
@@ -157,77 +160,26 @@ ChartBuilder.prototype._configChartOptions = function(){
 
 ChartBuilder.prototype._createLayout = function(){
     var oContainerWraper = this.containerWraper,
-        oChartWraper = document.createElement('div'),
-        oClose = document.createElement('a'),
-        oTrigger = document.createElement('div'),
-        oContainer = this.container,
-        chartOption = this.chartOption,
-        maxY = this.maxY,
-        windowScale = maxY / window.innerHeight;
+        oContainer = this.container;
     
-    /**关闭按钮 */
-    Object.assign(oClose.style, {
-        position: 'absolute',
-        right: 0,
-        top: 0,
-        margin: '10px',
-        color: 'white'
-    });
-    oClose.innerHTML = '关闭';
-    oClose.onclick = function(){
-        oContainer.style.display = 'none'
-    };
-
-    Object.assign(oContainer.style, {
-        position: 'fixed',
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'black',
-        opacity: 0.8,
-        top: 0,
-        left: 0,
-        display: 'none',
-        overflow: 'auto',
-        zIndex: '9999999999'
-    });
-
-    Object.assign(oChartWraper.style, {
-        width: '100%',
-        height: (windowScale * 100 * 2) + '%'
-    });
     
-    var echartsScript = document.createElement('script');
-    echartsScript.src = 'https://cdn.bootcss.com/echarts/3.8.5/echarts.min.js';
-    echartsScript.onload = function(){
-        oContainer.style.display = 'block';
-        var chart = window.echarts.init(oChartWraper);
-        chart.setOption(chartOption);
-        oContainer.style.display = 'none';
-    };
-    /**图表开关 */
-    Object.assign(oTrigger.style, {
-        position: 'fixed',
-        bottom: 0,
-        right: 0,
-        margin: '30px',
-        width: '50px',
-        height: '50px',
-        borderRadius: '50%',
-        lineHeight: '50px',
-        textAlign: 'center',
-        cursor: 'pointer',
-        backgroundColor: '#ddd'
-    });
-    oTrigger.innerHTML = '关系图';
-    oTrigger.onclick = function(){
-        oContainer.style.display = 'block';
-    };
+    new graphComponent({data: {
+        maxY: this.maxY,
+        chartOption: this.chartOption,
+        ChartBuilder: this,
+    }}).$inject(oContainerWraper);
+};
 
-    oContainerWraper.appendChild(echartsScript);
-    oContainerWraper.appendChild(oContainer);
-    oContainerWraper.appendChild(oTrigger);
-    oContainer.appendChild(oChartWraper);
-    oContainer.appendChild(oClose);
+ChartBuilder.prototype.genDataWithRoots = function(option){
+    var nodesMap = this.nodesMap;
+    var roots = (option && option.rootNames.map(function(rootName){
+        return nodesMap[rootName];
+    })) || this.roots;
+    this.formatedData = {data: [], links: []};
+    this.pointsIndexer = {};
+
+    this._formatData({roots: roots});
+    this._configChartOptions();
 };
 
 module.exports = ChartBuilder;
