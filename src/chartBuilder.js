@@ -160,10 +160,10 @@ ChartBuilder.prototype._configChartOptions = function(option){
 
 ChartBuilder.prototype._createLayout = function(){
     var oContainerWraper = this.containerWraper,
-        oContainer = this.container;
+        oContainer = this.container,
+        Component = graphComponent(Regular);
     
-    
-    new graphComponent({data: {
+    new Component({data: {
         maxY: this.maxY,
         chartOption: this.chartOption,
         ChartBuilder: this,
