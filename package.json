@@ -1,6 +1,6 @@
 {
   "name": "rwatcher",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "wactch for regular",
   "main": "index.js",
   "directories": {
