@@ -183,7 +183,7 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
                 var targetValue = context.$get(targetAttr);
 
                 if(async){
-                    self.wrapAsync(sources, target, targetValue, context, rule);
+                    self.wrapAsync(sources, targetAttr, targetValue, context, rule);
                 }else{
                     var result = rule.call(context, sources, targetValue);
                     context.$update(targetAttr, result);
