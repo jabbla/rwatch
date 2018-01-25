@@ -174,6 +174,7 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
 
     self.recordNodesMap({source: connector, target: targetAttr});
     setTimeout(function(){
+        var cached = '';
         self.attrsFilter(attrs).forEach(function(item) {
             var source = attrs[item.index];
             context.$watch(source.name, throttle(function(newValue, oldValue){
@@ -181,6 +182,14 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
 
                 var sources = attrs.map(function(item){return item.value});
                 var targetValue = context.$get(targetAttr);
+                
+                var Value = sources.reduce(function(pre, attrValue){
+                    return pre + JSON.stringify(attrValue);
+                }, '');
+
+                if(Value === cached){
+                    return;
+                }
 
                 if(async){
                     self.wrapAsync(sources, targetAttr, targetValue, context, rule);
@@ -189,6 +198,7 @@ rWatch.prototype.multiToSingle = function(sourceAttrs, targetAttr, rule, async, 
                     context.$update(targetAttr, result);
                     Thenable.tapable.applyPluginsWaterfall('then', result, {newValue: newValue, oldValue: oldValue});
                 }
+                cached  = Value;
             }));
         });
     }, 0);
