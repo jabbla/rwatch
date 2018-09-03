@@ -152,3 +152,6 @@ watcher.displayRelationGraph();
 
   [1]: https://codepen.io/jabbla/pen/rGeodQ
   [2]: http://oc3wui92y.bkt.clouddn.com/%E6%8D%95%E8%8E%B7.JPG
+
+## License
+MIT
